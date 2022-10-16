@@ -108,3 +108,32 @@ func TestProductservice_CreateProduct_ServerError(t *testing.T) {
 	assert.EqualValues(t, "something went wrong", err.Message())
 	assert.EqualValues(t, "server_error", err.Error())
 }
+
+func TestProductservice_DeleteProduct_Success(t *testing.T) {
+	product_domain.ProductDomain = &productDomainMock{}
+
+	deleteProduct = func(i int64) error_utils.MessageErr {
+		return nil
+	}
+
+	err := ProductService.DeleteProduct(1)
+
+	assert.Nil(t, err)
+
+}
+
+func TestProductservice_DeleteProduct_ServerError(t *testing.T) {
+	product_domain.ProductDomain = &productDomainMock{}
+
+	deleteProduct = func(i int64) error_utils.MessageErr {
+		return error_utils.NewInternalServerErrorr("something went wrong")
+	}
+
+	err := ProductService.DeleteProduct(1)
+
+	assert.NotNil(t, err)
+
+	assert.EqualValues(t, 500, err.Status())
+	assert.EqualValues(t, "something went wrong", err.Message())
+	assert.EqualValues(t, "server_error", err.Error())
+}

@@ -182,3 +182,70 @@ func TestProductController_CreateProduct_ServerError(t *testing.T) {
 	assert.EqualValues(t, "server_error", errData.ErrError)
 	assert.EqualValues(t, 500, errData.Status())
 }
+
+func TestProductController_DeleteProduct_Success(t *testing.T) {
+	product_service.ProductService = &productServiceMock{}
+
+	deleteProduct = func(int64) error_utils.MessageErr {
+		return nil
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/products/001", bytes.NewBufferString(""))
+
+	router := gin.Default()
+
+	gin.SetMode(gin.TestMode)
+
+	rr := httptest.NewRecorder()
+
+	router.DELETE("/products/:productId", DeleteProduct)
+
+	router.ServeHTTP(rr, req)
+
+	result := rr.Result()
+
+	defer result.Body.Close()
+
+	_, err := ioutil.ReadAll(result.Body)
+
+	require.Nil(t, err)
+
+	assert.EqualValues(t, 204, result.StatusCode)
+}
+
+func TestProductController_DeleteProduct_InvalidIDParams(t *testing.T) {
+	product_service.ProductService = &productServiceMock{}
+
+	deleteProduct = func(int64) error_utils.MessageErr {
+		return error_utils.NewBadRequest("invalid product id")
+	}
+
+	req := httptest.NewRequest(http.MethodDelete, "/products/string", bytes.NewBufferString(""))
+
+	router := gin.Default()
+
+	gin.SetMode(gin.TestMode)
+
+	rr := httptest.NewRecorder()
+
+	router.DELETE("/products/:productId", DeleteProduct)
+
+	router.ServeHTTP(rr, req)
+
+	result := rr.Result()
+
+	data, err := ioutil.ReadAll(result.Body)
+
+	defer result.Body.Close()
+
+	require.Nil(t, err)
+
+	var errData error_utils.MessageErrData
+
+	err = json.Unmarshal(data, &errData)
+
+	assert.Nil(t, err)
+	assert.EqualValues(t, "invalid product id params", errData.ErrMessage)
+	assert.EqualValues(t, "bad_request", errData.ErrError)
+	assert.EqualValues(t, 400, errData.Status())
+}
